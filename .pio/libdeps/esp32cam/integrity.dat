@@ -1,0 +1,4 @@
+ESP Async WebServer
+yoursunny/esp32cam @ ^0.0.20240110
+https://github.com/me-no-dev/AsyncTCP.git
+https://github.com/tzapu/WiFiManager.git
