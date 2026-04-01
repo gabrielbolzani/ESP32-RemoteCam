@@ -1,5 +1,4 @@
 .pio/build/esp32cam/src/main.cpp.o: src/main.cpp \
- C:/Users/Gabriel/.platformio/packages/framework-arduinoespressif32/cores/esp32/core_version.h \
  C:/Users/Gabriel/.platformio/packages/framework-arduinoespressif32/cores/esp32/Arduino.h \
  C:/Users/Gabriel/.platformio/packages/framework-arduinoespressif32/cores/esp32/esp_arduino_version.h \
  C:/Users/Gabriel/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32/include/freertos/include/freertos/FreeRTOS.h \

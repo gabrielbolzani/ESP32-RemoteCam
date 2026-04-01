@@ -29,24 +29,30 @@ def main():
         print("="*35)
         print("1. COMPILAR          (pio run)")
         print("2. UPLOAD            (pio run -t upload)")
-        print("3. MONITOR SERIAL    (pio monitor)")
-        print("4. LIMPAR BUILD      (pio clean)")
-        print("5. SAIR")
+        print("3. COMPILAR + UPLOAD (pio run + upload)")
+        print("4. MONITOR SERIAL    (pio monitor)")
+        print("5. LIMPAR BUILD      (pio clean)")
+        print("6. SAIR")
         print("-" * 35)
         
-        escolha = input("Escolha uma opção [1-5]: ").strip().lower()
+        escolha = input("Escolha uma opção [1-6]: ").strip().lower()
 
         if escolha in ['1', 'compilar']:
             run_pio_command(["run"])
         elif escolha in ['2', 'upload']:
             print("\n[DICA] Garanta que o GPIO 0 esteja ligado ao GND e resete a placa para entrar em modo Upload.")
             run_pio_command(["run", "-t", "upload"])
-        elif escolha in ['3', 'monitor']:
+        elif escolha in ['3', 'compilar+upload', 'cu']:
+            print("\n[DICA] Garanta que o GPIO 0 esteja ligado ao GND e resete a placa para entrar em modo Upload.")
+            print("\n[PASSO 1/2] Compilando...")
+            run_pio_command(["run"])
+            print("\n[PASSO 2/2] Enviando para a placa...")
+            run_pio_command(["run", "-t", "upload"])
+        elif escolha in ['4', 'monitor']:
             run_pio_command(["device", "monitor", "--baud", "115200"])
-
-        elif escolha in ['4', 'clean', 'limpar']:
+        elif escolha in ['5', 'clean', 'limpar']:
             run_pio_command(["run", "-t", "clean"])
-        elif escolha in ['5', 'sair', 'exit']:
+        elif escolha in ['6', 'sair', 'exit']:
             print("Saindo...")
             break
         else:
