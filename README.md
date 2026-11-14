@@ -19,6 +19,19 @@ A versão vem do arquivo [VERSION](https://github.com/gabrielbolzani/ESP32-Remot
 
 O SNR não é coletado nem exibido. O projeto não utiliza serviços de nuvem para vídeo ou armazenamento.
 
+## Modelos 3D e projeto mecânico
+
+Os arquivos da peça da câmera estão incluídos na [pasta hardware](https://github.com/gabrielbolzani/ESP32-RemoteCam/tree/main/hardware).
+
+| Formato | Arquivo |
+|---|---|
+| Arquivo nativo do Autodesk Fusion | [Peça_para_camera_da_impressora.f3d](https://github.com/gabrielbolzani/ESP32-RemoteCam/blob/main/hardware/Pe%C3%A7a_para_camera_da_impressora.f3d) |
+| Materiais associados à malha OBJ | [Peça_para_camera_da_impressora.mtl](https://github.com/gabrielbolzani/ESP32-RemoteCam/blob/main/hardware/Pe%C3%A7a_para_camera_da_impressora.mtl) |
+| Malha 3D OBJ | [Peça_para_camera_da_impressora.obj](https://github.com/gabrielbolzani/ESP32-RemoteCam/blob/main/hardware/Pe%C3%A7a_para_camera_da_impressora.obj) |
+| Modelo 3D de intercâmbio STEP | [Peça_para_camera_da_impressora.step](https://github.com/gabrielbolzani/ESP32-RemoteCam/blob/main/hardware/Pe%C3%A7a_para_camera_da_impressora.step) |
+
+Os arquivos foram publicados sem alterar a geometria ou converter os formatos. Mantenha o arquivo de materiais junto da malha OBJ, com os nomes originais. A publicação não representa uma nova validação dimensional ou de impressão.
+
 ## Hardware e ferramentas
 
 - ESP32-CAM AI-Thinker, OV2640 e PSRAM funcionando.
