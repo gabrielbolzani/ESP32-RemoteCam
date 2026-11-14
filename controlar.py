@@ -1,62 +1,63 @@
-import subprocess
+"""Painel PlatformIO: modo interativo e automação com código de saída real."""
+import argparse
 import os
+from pathlib import Path
+import shutil
+import subprocess
 import sys
 
-# Configuração do caminho do PlatformIO (encontrado no seu sistema)
-PIO_PATH = r"C:\Users\Gabriel\.platformio\penv\Scripts\pio.exe"
+PROJECT_DIR = Path(__file__).resolve().parent
+PIO_PATH = Path.home() / ".platformio" / "penv" / "Scripts" / "pio.exe"
 
-def run_pio_command(command_args, project_dir="."):
-    """Executa um comando pio e mantém a saída no terminal."""
-    if not os.path.exists(PIO_PATH):
-        print(f"\n[ERRO] PlatformIO não encontrado em {PIO_PATH}")
-        return
 
-    full_cmd = [PIO_PATH] + command_args
-    print(f"\n[INFO] Executando: {' '.join(full_cmd)}\n")
-    
-    try:
-        # Usamos check_call para que a saída apareça em tempo real
-        subprocess.check_call(full_cmd, cwd=project_dir, shell=True)
-    except subprocess.CalledProcessError as e:
-        print(f"\n[ALERTA] O comando falhou com código: {e.returncode}")
-    except Exception as e:
-        print(f"\n[ERRO] Ocorreu um erro: {e}")
+def run_pio_command(command_args, project_dir=PROJECT_DIR):
+    executable = os.environ.get("PLATFORMIO_EXE") or shutil.which("pio")
+    if not executable and PIO_PATH.is_file():
+        executable = str(PIO_PATH)
+    if not executable:
+        print("PlatformIO não encontrado.", file=sys.stderr)
+        return 127
+    command = [executable, *command_args]
+    print("[INFO]", subprocess.list2cmdline(command), flush=True)
+    return subprocess.run(command, cwd=project_dir, shell=False, check=False).returncode
+
+
+def execute(action, port=None):
+    commands = {
+        "compile": ["run", "-e", "esp32cam"],
+        "upload": ["run", "-e", "esp32cam", "-t", "upload"],
+        "monitor": ["device", "monitor", "--baud", "115200"],
+        "devices": ["device", "list"],
+        "clean": ["run", "-e", "esp32cam", "-t", "clean"],
+    }
+    command = commands[action].copy()
+    if port and action in ("upload", "monitor"):
+        command.extend(["--upload-port" if action == "upload" else "--port", port])
+    return run_pio_command(command)
+
 
 def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("action", nargs="?", choices=["compile", "upload", "monitor", "devices", "clean"])
+    parser.add_argument("--port", help="Porta serial explícita, por exemplo COM5")
+    arguments = parser.parse_args()
+    if arguments.action:
+        return execute(arguments.action, arguments.port)
     while True:
-        print("\n" + "="*35)
-        print("   PAINEL DE CONTROLE ESP32-CAM   ")
-        print("="*35)
-        print("1. COMPILAR          (pio run)")
-        print("2. UPLOAD            (pio run -t upload)")
-        print("3. COMPILAR + UPLOAD (pio run + upload)")
-        print("4. MONITOR SERIAL    (pio monitor)")
-        print("5. LIMPAR BUILD      (pio clean)")
-        print("6. SAIR")
-        print("-" * 35)
-        
-        escolha = input("Escolha uma opção [1-6]: ").strip().lower()
-
-        if escolha in ['1', 'compilar']:
-            run_pio_command(["run"])
-        elif escolha in ['2', 'upload']:
-            print("\n[DICA] Garanta que o GPIO 0 esteja ligado ao GND e resete a placa para entrar em modo Upload.")
-            run_pio_command(["run", "-t", "upload"])
-        elif escolha in ['3', 'compilar+upload', 'cu']:
-            print("\n[DICA] Garanta que o GPIO 0 esteja ligado ao GND e resete a placa para entrar em modo Upload.")
-            print("\n[PASSO 1/2] Compilando...")
-            run_pio_command(["run"])
-            print("\n[PASSO 2/2] Enviando para a placa...")
-            run_pio_command(["run", "-t", "upload"])
-        elif escolha in ['4', 'monitor']:
-            run_pio_command(["device", "monitor", "--baud", "115200"])
-        elif escolha in ['5', 'clean', 'limpar']:
-            run_pio_command(["run", "-t", "clean"])
-        elif escolha in ['6', 'sair', 'exit']:
-            print("Saindo...")
-            break
+        print("\n1. COMPILAR\n2. UPLOAD\n3. COMPILAR + UPLOAD\n4. MONITOR SERIAL\n5. LIMPAR BUILD\n6. SAIR")
+        choice = input("Escolha [1-6]: ").strip()
+        if choice == "6":
+            return 0
+        if choice == "3":
+            if execute("compile", arguments.port) == 0:
+                execute("upload", arguments.port)
+            else:
+                print("Compilação falhou; upload não executado.")
+        elif choice in {"1", "2", "4", "5"}:
+            execute({"1": "compile", "2": "upload", "4": "monitor", "5": "clean"}[choice], arguments.port)
         else:
-            print(f"\n[AVISO] Opção '{escolha}' inválida!")
+            print("Opção inválida.")
+
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

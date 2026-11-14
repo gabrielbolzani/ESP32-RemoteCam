@@ -1,0 +1,14 @@
+{
+  "name": "esp32-remotecam-tests",
+  "private": true,
+  "description": "Dependências de desenvolvimento dos testes de interface; a versão do firmware vem de VERSION.",
+  "scripts": {
+    "test:ui": "node tests/ui.test.cjs && node tests/services_ui.test.cjs"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "devDependencies": {
+    "playwright": "1.64.1"
+  }
+}

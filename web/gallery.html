@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Imagens do SD · RemoteCam</title>
+<style>
+:root{color-scheme:dark}*{box-sizing:border-box}body{margin:0;background:#0b1119;color:#edf4fb;font:15px system-ui,sans-serif}main{max-width:1200px;margin:auto;padding:24px}header,.row{display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:space-between}h1{margin:0}p,small{color:#a3b4c7;line-height:1.5}a,button{color:#edf4fb;background:#25374b;border:1px solid #3a4d64;padding:10px 14px;border-radius:8px;text-decoration:none;font:inherit;cursor:pointer}button:disabled{opacity:.4;cursor:default}.danger{color:#ff8f91;border-color:#6d3a44}.warning{color:#ffc782}input{width:100%;padding:10px;margin:10px 0;background:#141e2a;color:#edf4fb;border:1px solid #3a4d64;border-radius:8px}progress{width:100%}#grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:16px;margin:20px 0}.card{background:#141e2a;border:1px solid #29394c;border-radius:12px;overflow:hidden}.card img{width:100%;height:185px;object-fit:contain;display:block;background:#070b10;cursor:pointer}.info{padding:14px;overflow-wrap:anywhere}.info strong{display:block;margin-bottom:8px}.info .row{margin-top:12px;justify-content:flex-start}.folder{font-size:28px;padding:35px;text-align:center;color:#52d5bb}.muted{color:#a3b4c7}#message{padding:14px 0;color:#ffc782}code{overflow-wrap:anywhere}dialog{background:#0b1119;color:#edf4fb;border:1px solid #3a4d64;border-radius:12px;width:min(96vw,1300px);max-height:94vh;padding:16px}dialog::backdrop{background:#000d}#full-image{display:block;max-width:100%;max-height:75vh;margin:auto}[hidden]{display:none!important}@media(max-width:600px){main{padding:14px}h1{font-size:23px}}
+</style>
+</head>
+<body>
+<main>
+<header><div><h1>Imagens do cartão SD</h1><p>Firmware __FIRMWARE_VERSION__ · Pastas e fotografias gravadas</p></div><a href="/">Voltar ao painel</a></header>
+<div class="row"><div class="row"><button id="up">Pasta acima</button><code id="path">/</code></div><button id="refresh">Atualizar</button></div>
+<div id="current-folder-actions" class="row" style="justify-content:flex-start;margin-top:14px"></div>
+<div id="folder-job-container"></div>
+<p>Cada timelapse fica em uma pasta própria. Abra uma pasta e clique na foto para ampliar. As miniaturas são carregadas uma por vez para preservar memória e vídeo ao vivo.</p>
+<div id="message" role="status"></div>
+<section id="grid" aria-live="polite"></section>
+<div class="row"><button id="first">Primeira página</button><button id="next" hidden>Próxima página</button></div>
+<dialog id="viewer"><div class="row"><strong id="image-name"></strong><button id="close">Fechar</button></div><img id="full-image" alt="Imagem capturada"><p><a id="download">Baixar esta imagem</a></p></dialog>
+<script src="/assets/folder-actions.js"></script>
+<script>
+'use strict';
+const $ = id => document.getElementById(id);
+let folder = new URLSearchParams(location.search).get('path') || '/';
+let nextOffset = null;
+let generation = 0;
+let controller = new AbortController();
+let objectUrls = [];
+const bytes = value => value >= 1048576 ? (value / 1048576).toFixed(1) + ' MiB' : (value / 1024).toFixed(1) + ' KiB';
+
+function show(message) {
+    $('message').textContent = message;
+}
+
+function clearImages() {
+    controller.abort();
+    controller = new AbortController();
+    $('viewer').close();
+    $('full-image').removeAttribute('src');
+    for (const url of objectUrls) URL.revokeObjectURL(url);
+    objectUrls = [];
+    $('grid').replaceChildren();
+}
+
+async function previews(items, currentGeneration, signal) {
+    for (const item of items) {
+        if (currentGeneration !== generation) return;
+        try {
+            let response;
+            for (let attempt = 0; attempt < 3; attempt++) {
+                response = await fetch('/api/sd/image?path=' + encodeURIComponent(item.path), {signal, cache:'no-store'});
+                if (response.status !== 409) break;
+                await response.text();
+                await new Promise(resolve => setTimeout(resolve, 700));
+            }
+            if (!response.ok) {
+                const error = await response.json().catch(()=>({}));
+                if(error.code==='service_disabled') {
+                    SdFolders.setAccessEnabled(false);
+                    ++generation;
+                    controller.abort();
+                    show(error.message);
+                    return;
+                }
+                throw new Error(error.message || 'HTTP ' + response.status);
+            }
+            const blob = await response.blob();
+            if (currentGeneration !== generation) return;
+            const url = URL.createObjectURL(blob);
+            objectUrls.push(url);
+            item.image.src = url;
+            item.label.textContent = bytes(item.bytes);
+            item.image.onclick = () => {
+                $('full-image').src = url;
+                $('image-name').textContent = item.name;
+                $('download').href = '/api/sd/download?path=' + encodeURIComponent(item.path);
+                $('viewer').showModal();
+            };
+        } catch (error) {
+            if (error.name === 'AbortError') return;
+            item.label.textContent = 'Não foi possível carregar; use Atualizar.';
+        }
+    }
+}
+
+async function load(offset = 0) {
+    const currentGeneration = ++generation;
+    clearImages();
+    const signal = controller.signal;
+    show('Carregando…');
+    $('path').textContent = folder;
+    $('current-folder-actions').replaceChildren();
+    SdFolders.addActions($('current-folder-actions'), {directory:true,path:folder,name:folder.split('/').filter(Boolean).pop() || 'cartao'});
+    history.replaceState(null, '', '/gallery?path=' + encodeURIComponent(folder));
+    try {
+        const response = await fetch('/api/sd/list?path=' + encodeURIComponent(folder) + '&offset=' + offset, {signal, cache:'no-store'});
+        const data = await response.json();
+        if (!response.ok) {if(data.code==='service_disabled')SdFolders.setAccessEnabled(false);throw new Error(data.message || 'SD indisponível.');}
+        SdFolders.setAccessEnabled(true);
+        if (currentGeneration !== generation) return;
+        const pending = [];
+        for (const entry of data.items) {
+            const card = document.createElement('article');
+            card.className = 'card';
+            const information = document.createElement('div');
+            information.className = 'info';
+            const title = document.createElement('strong');
+            title.textContent = entry.name;
+            const label = document.createElement('small');
+            const actions = document.createElement('div');
+            actions.className = 'row';
+            if (entry.directory) {
+                const icon = document.createElement('div');
+                icon.className = 'folder';
+                icon.textContent = 'Pasta';
+                card.appendChild(icon);
+                label.textContent = 'Diretório';
+                const open = document.createElement('button');
+                open.textContent = 'Abrir pasta';
+                open.onclick = () => {folder = entry.path; load();};
+                actions.appendChild(open);
+                SdFolders.addActions(actions, entry);
+            } else if (!entry.incomplete && /\.jpe?g$/i.test(entry.name)) {
+                const image = document.createElement('img');
+                image.alt = entry.name;
+                image.decoding = 'async';
+                card.appendChild(image);
+                label.textContent = 'Aguardando miniatura…';
+                pending.push({...entry, image, label});
+            } else {
+                label.textContent = entry.incomplete ? 'Arquivo incompleto; não é uma foto concluída.' : bytes(entry.bytes);
+            }
+            if (!entry.directory && !entry.incomplete) {
+                const download = document.createElement('a');
+                download.href = '/api/sd/download?path=' + encodeURIComponent(entry.path);
+                download.textContent = 'Baixar';
+                actions.appendChild(download);
+            }
+            information.append(title, label, actions);
+            card.appendChild(information);
+            $('grid').appendChild(card);
+        }
+        nextOffset = data.next_offset;
+        $('next').hidden = nextOffset === null;
+        $('up').disabled = folder === '/';
+        show(data.items.length ? 'Clique em uma foto para ampliar.' : 'Esta pasta está vazia.');
+        previews(pending, currentGeneration, signal);
+    } catch (error) {
+        if (error.name !== 'AbortError') show(error.message);
+    }
+}
+
+SdFolders.setup({
+    progressTarget:'folder-job-container',
+    showMessage:show,
+    beforeAction:()=>{
+        ++generation;
+        controller.abort();
+        $('viewer').close();
+    },
+    onBusy:value=>{
+        for(const id of ['up','refresh','first','next']) $(id).disabled=value;
+        if(!value) $('up').disabled=folder==='/';
+    },
+    onChange:async job=>{
+        if(job.phase==='completed' && SdFolders.contains(job.path,folder)) {
+            folder=job.operation==='rename'?job.destination+folder.slice(job.path.length):SdFolders.parentOf(job.path);
+        }
+        await load();
+    }
+});
+$('up').onclick = () => {folder = folder.substring(0, folder.lastIndexOf('/')) || '/'; load();};
+$('refresh').onclick = () => load();
+$('first').onclick = () => load();
+$('next').onclick = () => {if (nextOffset !== null) load(nextOffset);};
+$('close').onclick = () => $('viewer').close();
+window.addEventListener('pagehide', clearImages);
+SdFolders.resume().then(()=>load());
+</script>
+</main>
+</body>
+</html>

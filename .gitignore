@@ -1,0 +1,24 @@
+# Build, dependências e recursos gerados
+/.pio/
+/node_modules/
+/src/web_ui.h
+/src/firmware_version.h
+
+# Configuração local do editor
+/.vscode/
+
+# Resultados, cópias de segurança e ferramentas locais de verificação
+/verification/
+/backups/
+/build_log.txt
+/docs/analise-e-plano-remotecam.md
+/playwright-report/
+/test-results/
+*.log
+__pycache__/
+*.pyc
+
+# Credenciais e configurações locais
+.env
+.env.*
+!.env.example

@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RemoteCam · Painel</title>
+<style>
+:root{color-scheme:dark;--bg:#0b1119;--card:#141e2a;--line:#29394c;--text:#edf4fb;--muted:#a3b4c7;--accent:#52d5bb;--danger:#ff8f91;--orange:#ffc782}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px system-ui,sans-serif}main{max-width:1200px;margin:auto;padding:24px}header{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:24px}h1{margin:0;font-size:27px}h2{margin:0 0 16px;font-size:19px}h3{font-size:16px}p{line-height:1.5}.muted,small{color:var(--muted)}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}.card{background:var(--card);border:1px solid var(--line);padding:22px;border-radius:16px}.wide{grid-column:1/-1}.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.stat{padding:16px;background:#101923;border:1px solid var(--line);border-radius:12px}.stat strong{font-size:22px;display:block;margin-top:6px}.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}.between{justify-content:space-between}.stack{display:grid;gap:12px}button,.button{display:inline-block;border:1px solid var(--line);border-radius:9px;background:#25374b;color:var(--text);padding:11px 15px;text-decoration:none;font:inherit;cursor:pointer}button.primary{background:var(--accent);color:#082b27;border-color:var(--accent);font-weight:650}button.danger{color:var(--danger);border-color:#6d3a44}button:disabled{opacity:.45;cursor:not-allowed}input,select{font:inherit;color:var(--text);background:#0c1520;border:1px solid #3a4d64;border-radius:8px;padding:10px;width:100%}input[type=checkbox]{width:auto}input[type=range]{padding:0;accent-color:var(--accent)}label{display:block;color:var(--muted);font-size:13px;margin:12px 0 7px}.check{display:flex;align-items:center;gap:8px}.two{display:grid;grid-template-columns:1fr 1fr;gap:12px}#video{display:block;max-width:100%;max-height:65vh;margin:auto}#video-box{background:#070b10;min-height:220px;border-radius:10px;display:grid;place-items:center;overflow:hidden;margin:16px 0}#video-hint{padding:24px;color:var(--muted)}#notice{position:sticky;top:8px;z-index:3;padding:12px 16px;border-radius:10px;background:#183c38;border:1px solid #407f74;margin-bottom:16px}#notice.error{background:#472329;border-color:#99515b}dialog{max-width:560px;width:calc(100% - 32px);max-height:90vh;overflow:auto;background:var(--card);color:var(--text);border:1px solid var(--line);border-radius:16px;padding:24px}dialog::backdrop{background:#000a}.file{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;border-bottom:1px solid var(--line);padding:13px 0}.filename{word-break:break-word}.file button,.file a{padding:7px 10px;font-size:13px}.badge{font-size:12px;border:1px solid var(--line);padding:5px 9px;border-radius:15px;color:var(--accent)}progress{width:100%;height:14px;accent-color:var(--accent)}[hidden]{display:none!important}.warning{color:var(--orange)}code{font-size:13px;word-break:break-all}footer{padding:24px 0;color:var(--muted);font-size:12px}#login{max-width:440px;margin:70px auto}.right{margin-left:auto}@media(max-width:760px){main{padding:14px}.grid,.two{grid-template-columns:1fr}.stats{grid-template-columns:1fr 1fr}.card{padding:17px}header{align-items:flex-start}.file{grid-template-columns:1fr}.row button{flex-grow:1}}
+
+.service-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.service-row{border:1px solid var(--line);border-radius:12px;padding:16px}.service-row h3{margin:0}.service-row p{font-size:13px;color:var(--muted);margin-bottom:0}.service-top{display:flex;justify-content:space-between;align-items:center;gap:12px}.service-switch{margin:0;display:flex;align-items:center;gap:10px}.service-switch input{appearance:none;position:relative;width:46px;height:26px;border-radius:20px;border:1px solid #435770;background:#263444;cursor:pointer;padding:0}.service-switch input::before{content:'';position:absolute;left:3px;top:3px;width:18px;height:18px;border-radius:50%;background:white;transition:transform .15s}.service-switch input:checked{background:var(--accent);border-color:var(--accent)}.service-switch input:checked::before{transform:translateX(20px)}.service-switch input:disabled{opacity:.45;cursor:wait}.service-switch input:focus-visible{outline:2px solid #fff;outline-offset:3px}.service-row [data-state=stopping],.service-row [data-state=error]{color:var(--orange)}#service-interval{width:auto;margin-left:8px}a[aria-disabled=true]{opacity:.45;cursor:not-allowed}@media(max-width:760px){.service-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<main id="main">
+<header id="header">
+<div><h1>RemoteCam</h1><p class="muted" id="device-name">Câmera · iluminação · timelapse</p></div>
+<div class="row"><span class="badge" id="firmware-version">Firmware __FIRMWARE_VERSION__</span><span class="badge" id="connection">Conectando</span></div>
+</header>
+<div id="notice" role="status" hidden></div>
+<div id="dashboard" class="grid">
+<section id="telemetry" class="card wide">
+<div class="stats">
+<div class="stat"><small>Sinal estimado</small><strong id="wifi-pct">—</strong><small id="wifi-rssi">RSSI: — dBm</small></div>
+<div class="stat"><small>Temperatura do chip</small><strong id="chip-temperature">— °C</strong><small>Leitura interna aproximada</small></div>
+<div class="stat"><small>Vídeo enviado</small><strong id="fps">— fps</strong><small id="frame-info">Aguardando captura</small></div>
+<div class="stat"><small title="Uso do heap interno; PSRAM é mostrada separadamente">RAM utilizada</small><strong id="heap">—%</strong><small id="heap-free">— de memória livre</small><br><small id="psram">PSRAM livre: —</small></div>
+</div>
+<div class="row between" style="margin-top:14px"><small id="technical">—</small></div>
+<small>Percentual estima intensidade do Wi-Fi, não velocidade. A temperatura é do chip ESP32, não da impressora nem do ambiente.</small>
+</section>
+<section id="services" class="card wide">
+<div class="row between"><h2>Serviços</h2><button id="services-refresh" type="button">Atualizar agora</button></div>
+<p class="muted">Preferências salvas na câmera. Wi-Fi, painel, <code>/stream</code> e <code>/snapshot</code> não têm chave de desligamento.</p>
+<div class="service-grid">
+<div class="service-row"><div class="service-top"><div><h3>FTP</h3><span class="badge" id="state-service-ftp">Carregando</span></div><label class="service-switch" for="service-ftp"><span class="muted">Ativar</span><input id="service-ftp" type="checkbox" role="switch" disabled></label></div><p id="service-ftp-detail">Servidor FTP anônimo de leitura.</p></div>
+<div class="service-row"><div class="service-top"><div><h3>Acesso web ao SD</h3><span class="badge" id="state-service-web-sd">Carregando</span></div><label class="service-switch" for="service-web-sd"><span class="muted">Ativar</span><input id="service-web-sd" type="checkbox" role="switch" disabled></label></div><p id="service-sd-detail">Galeria e arquivos; gravação permanece independente.</p></div>
+<div class="service-row"><div class="service-top"><div><h3>Atualização OTA</h3><span class="badge" id="state-service-ota">Carregando</span></div><label class="service-switch" for="service-ota"><span class="muted">Ativar</span><input id="service-ota" type="checkbox" role="switch" disabled></label></div><p id="service-ota-detail">Permite iniciar atualizações pela rede.</p></div>
+<div class="service-row"><div class="service-top"><div><h3>Atualização do painel</h3><span class="badge" id="state-service-panel-refresh">Carregando</span></div><label class="service-switch" for="service-panel-refresh"><span class="muted">Automática</span><input id="service-panel-refresh" type="checkbox" role="switch" disabled></label></div><label for="service-interval">Intervalo<select id="service-interval" disabled><option value="2">2 segundos</option><option value="5">5 segundos</option><option value="10">10 segundos</option></select></label><p id="panel-refresh-state"></p></div>
+</div>
+<p id="services-message" role="status" class="muted">Operações já iniciadas terminam antes de o serviço desligar.</p><small id="status-last-read">Aguardando leitura.</small>
+</section>
+<section id="preview" class="card wide">
+<div class="row between"><h2>Ao vivo</h2><div class="row"><button id="video-toggle" class="primary">Abrir vídeo</button><a class="button" id="snapshot" target="_blank" rel="noopener">Capturar foto</a></div></div>
+<div id="video-box"><span id="video-hint">Abra o vídeo para iniciar a transmissão. Monitor da impressora e painel podem usar o vídeo simultaneamente.</span><img id="video" alt="Transmissão ao vivo da câmera" hidden></div>
+<small id="camera-metrics">Clock de 20 MHz · JPEG nativo · Wi-Fi sem economia de energia</small>
+</section>
+<section id="lighting" class="card">
+<div class="row between"><h2>Iluminação</h2><span class="badge" id="led-state">Desligada</span></div>
+<label for="led-slider">Intensidade PWM <strong id="led-value">25%</strong></label>
+<input id="led-slider" type="range" min="0" max="100" value="25">
+<div class="row" style="margin-top:16px"><button id="led-toggle" class="primary">Ligar</button><label class="check"><input id="auto-flash" type="checkbox"> Luz automática no vídeo/foto</label></div>
+<p class="muted">Desligar preserva a última intensidade. Uso contínuo em intensidade alta exige verificar aquecimento e alimentação.</p>
+</section>
+<section id="timelapse" class="card">
+<div class="row between"><h2>Timelapse</h2><span id="tl-state" class="badge">Parado</span></div>
+<div class="two"><div><small>Fotos gravadas</small><h2 id="tl-count">0</h2></div><div><small>Próxima captura</small><h2 id="tl-next">—</h2></div></div>
+<p id="tl-detail" class="muted">Continua gravando mesmo com o navegador fechado.</p>
+<p><code id="tl-session"></code></p>
+<div class="row"><button id="tl-open" class="primary">Iniciar timelapse</button><button id="tl-stop" class="danger" disabled>Finalizar</button></div>
+</section>
+<section id="storage" class="card wide">
+<div class="row between"><h2>Cartão SD</h2><div class="row"><button id="sd-mount">Detectar / remontar</button><a class="button" id="open-gallery" href="/gallery">Ver imagens do SD</a><button id="sd-refresh">Atualizar</button><button id="sd-format" class="danger">Formatar cartão</button></div></div>
+<p id="sd-info" class="muted">Verificando cartão…</p><progress id="sd-space" max="100" value="0"></progress>
+<div class="row" style="margin-top:16px"><button id="sd-up">Pasta acima</button><code id="sd-path">/</code><button id="sd-mkdir" class="right">Nova pasta</button><a id="sd-archive" class="button">Baixar pasta (ZIP)</a></div>
+<div id="files" aria-live="polite"></div><button id="sd-more" hidden style="margin-top:12px">Próxima página</button>
+<small>Downloads usam memória limitada. Arquivos .part/.tmp são incompletos. Pastas podem ser renomeadas, baixadas como ZIP ou excluídas com todo o conteúdo após confirmação. Nenhuma gravação antiga é apagada automaticamente.</small>
+</section>
+<section id="camera-settings" class="card">
+<h2>Imagem</h2>
+<form id="camera-form">
+<div class="two"><div><label for="resolution">Resolução</label><select id="resolution" class="resolutions"></select></div><div><label for="quality">JPEG <span id="quality-value">16</span></label><input id="quality" type="range" min="10" max="63" value="16"></div></div>
+<small>Número JPEG menor = mais qualidade e arquivos maiores.</small>
+<div class="two"><div><label for="brightness">Brilho</label><input id="brightness" type="range" min="-2" max="2" value="0"></div><div><label for="contrast">Contraste</label><input id="contrast" type="range" min="-2" max="2" value="0"></div></div>
+<label for="saturation">Saturação</label><input id="saturation" type="range" min="-2" max="2" value="0">
+<div class="row"><label class="check"><input id="vflip" type="checkbox"> Inverter vertical</label><label class="check"><input id="mirror" type="checkbox"> Espelhar</label></div>
+<button class="primary" id="camera-save" style="margin-top:12px">Salvar imagem</button>
+</form>
+</section>
+<section id="system" class="card">
+<h2>Sistema e atualização</h2>
+<div id="ftp-info" style="border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:16px">
+<h3>FTP do cartão SD</h3><p id="ftp-state" class="muted">Verificando serviço…</p>
+<code id="ftp-address">—</code>
+<p class="muted">FileZilla ou WinSCP: FTP simples, porta 21, modo passivo e acesso anônimo. Somente leitura/download; alterações continuam pela interface web. Use apenas na rede local. Não é SFTP/FTPS.</p>
+<small>Portas passivas: 50000–50001. Até duas conexões de controle e uma transferência de dados por vez.</small>
+</div>
+<form id="system-form"><label for="hostname">Nome mDNS</label><input id="hostname" maxlength="32" pattern="[a-zA-Z0-9-]+" required><button style="margin-top:12px">Salvar e reiniciar</button></form>
+<hr style="border:0;border-top:1px solid var(--line);margin:22px 0">
+<p id="ota-service-state" class="muted"></p><form id="ota-form"><label for="firmware">Atualizar firmware da ESP32-CAM</label><input id="firmware" type="file" accept=".bin" required><button id="ota-submit" class="danger" style="margin-top:12px">Enviar firmware</button><progress id="ota-progress" value="0" max="100" hidden></progress></form>
+<p class="muted">Acesso direto, sem login. Use na rede local; OTA não é permitido com timelapse, manutenção ou download ativos.</p>
+</section>
+</div>
+<footer id="footer">RemoteCam __FIRMWARE_VERSION__ · SD_MMC 1 bit · JPEGs por sessão, sem conversão local para vídeo.</footer>
+<dialog id="tl-dialog">
+<h2>Iniciar timelapse</h2><form id="tl-form" class="stack">
+<div><label for="tl-interval">Intervalo entre fotos (segundos)</label><input id="tl-interval" type="number" min="1" max="86400" step="1" value="10" required></div>
+<div class="two"><div><label for="tl-resolution">Resolução das fotos</label><select id="tl-resolution" class="resolutions"></select></div><div><label for="tl-quality">JPEG <span id="tl-quality-value">16</span></label><input id="tl-quality" type="range" min="10" max="63" value="16"></div></div>
+<div><label for="tl-mode">Comportamento do vídeo</label><select id="tl-mode"><option value="shared">Fluido: vídeo usa a configuração das fotos</option><option value="priority">Foto prioritária: vídeo pausa em cada captura</option></select></div>
+<label class="check"><input id="tl-flash" type="checkbox"> Iluminar a captura com a intensidade do LED</label>
+<p class="warning">O sensor é único. No modo fluido, o vídeo adota a resolução e compressão das fotos. No modo prioritário, há pausas e o intervalo mínimo é de 3 segundos. A primeira foto ocorre após a preparação.</p>
+<div class="row"><button class="primary" id="tl-confirm">Iniciar gravação</button><button type="button" data-close="tl-dialog">Cancelar</button></div>
+</form>
+</dialog>
+<dialog id="format-dialog">
+<h2 class="warning">Apagar todo o cartão?</h2><p id="format-info"></p><p>Todos os arquivos serão perdidos. Não desligue nem remova o cartão durante a operação. Formatação FAT32.</p>
+<form id="format-form"><label for="format-text">Digite FORMATAR</label><input id="format-text" autocomplete="off" pattern="FORMATAR" required><div class="row" style="margin-top:16px"><button class="danger" id="format-confirm">Apagar e formatar</button><button type="button" data-close="format-dialog">Cancelar</button></div></form>
+</dialog>
+<script src="/assets/folder-actions.js"></script>
+<script src="/assets/services.js"></script>
+<script>
+'use strict';
+const $ = id => document.getElementById(id);
+let current = null, videoOpen = false, initialized = false, previous = null;
+let directory = '/', nextOffset = null, formatChallenge = '', ledTimer = null, statusTimer = null;
+let statusRequest = null, lastStatusAt = 0;
+const resolutions = [[1,'QQVGA · 160×120'],[5,'QVGA · 320×240'],[8,'VGA · 640×480'],[9,'SVGA · 800×600'],[10,'XGA · 1024×768'],[11,'HD · 1280×720'],[12,'SXGA · 1280×1024'],[13,'UXGA · 1600×1200']];
+for (const select of document.querySelectorAll('.resolutions')) for (const [value,label] of resolutions) {const option=document.createElement('option');option.value=value;option.textContent=label;select.appendChild(option);}
+const size = value => value >= 1073741824 ? (value/1073741824).toFixed(2)+' GiB' : value>=1048576 ? (value/1048576).toFixed(1)+' MiB' : (value/1024).toFixed(1)+' KiB';
+const media = path => path;
+function notice(message,error=false){$('notice').textContent=message;$('notice').classList.toggle('error',error);$('notice').hidden=false;}
+async function api(path,data,method){const options={credentials:'same-origin',cache:'no-store'};if(data!==undefined){options.method=method||'POST';options.headers={'Content-Type':'application/json'};options.body=JSON.stringify(data);}const response=await fetch(path,options);const result=await response.json();if(!response.ok){throw new Error(result.message||response.statusText);}return result;}
+function safe(action){return async event=>{if(event)event.preventDefault();try{await action(event);}catch(error){notice(error.message,true);}};}
+function setProfile(prefix,profile){$(prefix+'resolution').value=profile.resolution;$(prefix+'quality').value=profile.quality;$(prefix+'quality-value').textContent=profile.quality;}
+function readProfile(prefix=''){const profile={resolution:Number($(prefix+'resolution').value),quality:Number($(prefix+'quality').value)};if(!prefix){for(const key of ['brightness','contrast','saturation'])profile[key]=Number($(key).value);profile.vflip=$('vflip').checked;profile.mirror=$('mirror').checked;}return profile;}
+function render(data){const wasMounted=current?.sd.mounted;const lastJob=current?.job;current=data;const now=performance.now();$('connection').textContent=data.services?.panel_refresh.enabled===false?'Atualização pausada':'Online';lastStatusAt=Date.now();$('status-last-read').textContent='Última leitura: '+new Date(lastStatusAt).toLocaleTimeString('pt-BR');$('dashboard').hidden=false;$('firmware-version').textContent='Firmware '+data.version;$('device-name').textContent=data.hostname+'.local · '+data.wifi.ip+' · '+data.version;$('wifi-pct').textContent=data.wifi.signal_pct==null?'Sem Wi-Fi':data.wifi.signal_pct+'%';$('wifi-rssi').textContent='RSSI: '+(data.wifi.rssi_dbm??'—')+' dBm';$('chip-temperature').textContent=Number.isFinite(data.chip_temperature_c)?data.chip_temperature_c.toFixed(1)+' °C':'N/D';$('heap').textContent=Number.isFinite(data.heap_used_pct)?data.heap_used_pct.toFixed(1).replace('.',',')+'%':'N/D';$('heap-free').textContent=size(data.heap_free)+' livres';$('psram').textContent='PSRAM livre: '+size(data.psram_free);if(previous){const seconds=(now-previous.at)/1000;$('fps').textContent=Math.max(0,(data.camera.sent-previous.sent)/seconds).toFixed(1)+' fps';}previous={at:now,sent:data.camera.sent};$('frame-info').textContent=data.camera.width?data.camera.width+'×'+data.camera.height+' · '+size(data.camera.jpeg_bytes):'Aguardando captura';$('camera-metrics').textContent='Captura '+data.camera.capture_ms+' ms · envio '+data.camera.send_ms+' ms · erros '+data.camera.errors+' · descartes '+data.camera.dropped;if(data.ftp){$('ftp-state').textContent=data.ftp.requested===false?'Desligado na seção Serviços':data.ftp.enabled?'Ativo · somente leitura · '+data.ftp.sessions+' conexão(ões)'+(data.ftp.transferring?' · transferindo':''):'FTP indisponível';$('ftp-address').textContent='ftp://'+data.wifi.ip+':'+data.ftp.port+'/';}$('technical').textContent='Canal '+data.wifi.channel+' · uptime '+Math.floor(data.uptime_seconds/60)+' min · heap mínimo '+size(data.heap_min);$('led-state').textContent=data.led.effective_on?'Acesa':'Desligada';$('led-toggle').textContent=data.led.enabled?'Desligar':'Ligar';if(document.activeElement!==$('led-slider')&&!ledTimer){$('led-slider').value=data.led.intensity_pct;$('led-value').textContent=data.led.intensity_pct+'%';}$('auto-flash').checked=data.led.auto_flash;const tl=data.timelapse;const busy=['starting','recording','stopping'].includes(tl.state);const phases={idle:'Parado',starting:'Preparando',recording:'Gravando',stopping:'Finalizando',completed:'Concluído',error:'Interrompido'};$('tl-state').textContent=phases[tl.state]||tl.state;$('tl-count').textContent=tl.saved;$('tl-next').textContent=tl.state==='recording'?tl.next_seconds+' s':'—';$('tl-detail').textContent='Duração '+Math.floor(tl.elapsed_seconds/60)+' min · '+size(tl.bytes)+' · slots perdidos '+tl.missed;$('tl-session').textContent=tl.session;$('tl-open').disabled=busy||!data.sd.mounted||data.sd.maintenance||!data.camera.ready;$('tl-stop').disabled=!busy||tl.state==='stopping';$('camera-save').disabled=busy||data.job==='settings_applying';$('sd-format').disabled=busy||data.sd.download||data.sd.maintenance||!data.sd.present;$('sd-mount').disabled=busy||data.sd.download||data.sd.maintenance;$('sd-mkdir').disabled=busy||!data.sd.mounted||data.sd.maintenance;$('sd-info').textContent=data.sd.maintenance?'Manutenção: '+data.job:data.sd.mounted?size(data.sd.free_bytes)+' livres / '+size(data.sd.total_bytes)+' · SD em 1 bit':data.sd.present?'Cartão detectado, sistema de arquivos não montado':'Cartão ausente ou sem comunicação';$('sd-space').value=data.sd.total_bytes?100*(data.sd.total_bytes-data.sd.free_bytes)/data.sd.total_bytes:0;if(!initialized){setProfile('',data.camera.profile);for(const key of ['brightness','contrast','saturation'])$(key).value=data.camera.profile[key];$('vflip').checked=data.camera.profile.vflip;$('mirror').checked=data.camera.profile.mirror;$('hostname').value=data.hostname;initialized=true;}if(lastJob&&lastJob!==data.job&&!data.job.endsWith('starting')&&!data.job.endsWith('applying'))notice('Operação: '+data.job+(data.error?' · '+data.error:''),Boolean(data.error));ServiceControls.render(data.services);if(data.sd.mounted&&!wasMounted&&webSdEnabled())loadFiles().catch(error=>notice(error.message,true));if(data.error&&!busy)notice(data.error,true);}
+function webSdEnabled(){return current?.services?.web_sd.enabled!==false&&current?.services?.web_sd.state!=='paused';}
+function updateServiceAvailability(){
+    const allowed=webSdEnabled();
+    SdFolders.setAccessEnabled(allowed);
+    const recording=['starting','recording','stopping'].includes(current?.timelapse.state);
+    $('sd-refresh').disabled=!allowed;
+    $('sd-up').disabled=!allowed||directory==='/';
+    $('sd-more').disabled=!allowed;
+    $('sd-mount').disabled=!allowed||recording||current?.sd.download||current?.sd.maintenance;
+    $('sd-format').disabled=!allowed||recording||current?.sd.download||current?.sd.maintenance||!current?.sd.present;
+    $('sd-mkdir').disabled=!allowed||recording||!current?.sd.mounted||current?.sd.maintenance;
+    for(const id of ['open-gallery','sd-archive']) $(id).setAttribute('aria-disabled',String(!allowed));
+    if(!allowed){$('files').replaceChildren();$('files').textContent='Acesso web ao SD desativado. Reative na seção Serviços.';}
+    const allowOta=current?.services?.ota.enabled!==false&&!current?.ota;
+    $('firmware').disabled=!allowOta;
+    $('ota-submit').disabled=!allowOta;
+    $('ota-service-state').textContent=allowOta?'OTA habilitado.':current?.ota?'Atualização em andamento; aguarde.':'OTA desativado. Ative na seção Serviços para enviar firmware.';
+}
+function startPolling(){
+    clearTimeout(statusTimer);
+    statusTimer=null;
+    if(ServiceControls.isSaving()||statusRequest)return;
+    if(current?.services?.panel_refresh.enabled===false)return;
+    const seconds=current?.services?.panel_refresh.interval_seconds||2;
+    statusTimer=setTimeout(()=>refresh(),seconds*1000);
+}
+function refresh(force=false){
+    if(ServiceControls.isSaving()&&!force)return statusRequest||Promise.resolve();
+    if(statusRequest)return statusRequest;
+    clearTimeout(statusTimer);
+    statusRequest=(async()=>{
+        try{render(await api('/api/status'));}
+        catch(error){$('connection').textContent='Sem atualização';notice(error.message,true);}
+        finally{statusRequest=null;startPolling();}
+    })();
+    return statusRequest;
+}
+function stopVideo(send=true){$('video').removeAttribute('src');$('video').hidden=true;$('video-hint').hidden=false;videoOpen=false;$('video-toggle').textContent='Abrir vídeo';}
+$('video-toggle').onclick=()=>{if(videoOpen){stopVideo();return;}$('video').src='/stream?t='+Date.now();$('video').hidden=false;$('video-hint').hidden=true;videoOpen=true;$('video-toggle').textContent='Fechar vídeo';};
+$('video').onerror=()=>{if(videoOpen){stopVideo(false);notice('Vídeo desconectado. Tente abrir novamente.',true);}};
+$('snapshot').href=media('/snapshot');
+async function sendLed(enabled){const result=await api('/api/led',{enabled,intensity_pct:Number($('led-slider').value),auto_flash:$('auto-flash').checked});if(current)current.led.enabled=enabled;$('led-toggle').textContent=enabled?'Desligar':'Ligar';return result;}
+$('led-slider').oninput=()=>{$('led-value').textContent=$('led-slider').value+'%';if(!ledTimer)ledTimer=setTimeout(()=>{ledTimer=null;sendLed(Number($('led-slider').value)>0).catch(error=>notice(error.message,true));},120);};
+$('led-slider').onchange=safe(async()=>{clearTimeout(ledTimer);ledTimer=null;await sendLed(Number($('led-slider').value)>0);});
+$('led-toggle').onclick=safe(async()=>{await sendLed(!current?.led.enabled);await refresh();});
+$('auto-flash').onchange=safe(async()=>{await sendLed(current?.led.enabled||false);});
+for(const id of ['quality','tl-quality'])$(id).oninput=()=>$(id+'-value').textContent=$(id).value;
+$('camera-form').onsubmit=safe(async()=>{notice((await api('/api/camera',readProfile())).message);});
+$('tl-open').onclick=()=>{setProfile('tl-',current.camera.profile);$('tl-dialog').showModal();};
+$('tl-mode').onchange=()=>{$('tl-interval').min=$('tl-mode').value==='priority'?3:1;if(Number($('tl-interval').value)<Number($('tl-interval').min))$('tl-interval').value=$('tl-interval').min;};
+$('tl-form').onsubmit=safe(async()=>{$('tl-confirm').disabled=true;try{notice((await api('/api/timelapse/start',{interval_seconds:Number($('tl-interval').value),profile:readProfile('tl-'),photo_priority:$('tl-mode').value==='priority',flash:$('tl-flash').checked})).message);$('tl-dialog').close();await refresh();}finally{$('tl-confirm').disabled=false;}});
+$('tl-stop').onclick=safe(async()=>{notice((await api('/api/timelapse/stop',{})).message);await refresh();});
+for(const button of document.querySelectorAll('[data-close]'))button.onclick=()=>$(button.dataset.close).close();
+async function loadFiles(offset=0){if(!webSdEnabled()){$('files').textContent='Acesso web ao SD desativado. Ative em Serviços.';return;}if(!current?.sd.mounted){$('files').textContent='Monte um cartão para navegar.';return;}const result=await api('/api/sd/list?path='+encodeURIComponent(directory)+'&offset='+offset);$('sd-path').textContent=directory;$('files').replaceChildren();for(const item of result.items){const row=document.createElement('div');row.className='file';const info=document.createElement('div');const name=document.createElement('div');name.className='filename';name.textContent=(item.directory?'Pasta · ':'')+item.name;const detail=document.createElement('small');detail.textContent=item.directory?'Diretório':size(item.bytes)+(item.incomplete?' · incompleto':'');info.append(name,detail);const actions=document.createElement('div');actions.className='row';if(item.directory){const open=document.createElement('button');open.textContent='Abrir';open.onclick=safe(async()=>{directory=item.path;await loadFiles();});actions.appendChild(open);SdFolders.addActions(actions,item);}if(!item.directory&&!item.incomplete){const link=document.createElement('a');link.className='button';link.textContent=item.directory?'Baixar TAR':'Baixar';link.href=media('/api/sd/'+(item.directory?'archive':'download')+'?path='+encodeURIComponent(item.path));actions.appendChild(link);}if(!item.directory){const remove=document.createElement('button');remove.className='danger';remove.textContent='Excluir';remove.disabled=['starting','recording','stopping'].includes(current.timelapse.state)||current.sd.download;remove.onclick=safe(async()=>{if(!confirm('Excluir '+item.name+'?'))return;notice((await api('/api/sd/item',{path:item.path,confirmation:'EXCLUIR'},'DELETE')).message);await loadFiles();});actions.appendChild(remove);}row.append(info,actions);$('files').appendChild(row);}if(!result.items.length)$('files').textContent='Pasta vazia.';nextOffset=result.next_offset;$('sd-more').hidden=nextOffset===null;$('sd-archive').href=media('/api/sd/archive?path='+encodeURIComponent(directory));}
+$('sd-refresh').onclick=safe(async()=>{await refresh();await loadFiles();});
+$('sd-up').onclick=safe(async()=>{directory=directory.substring(0,directory.lastIndexOf('/'))||'/';await loadFiles();});
+$('sd-more').onclick=safe(async()=>{if(nextOffset!==null)await loadFiles(nextOffset);});
+$('sd-mount').onclick=safe(async()=>{notice((await api('/api/sd/mount',{})).message);});
+$('sd-mkdir').onclick=safe(async()=>{const name=prompt('Nome da nova pasta:');if(!name)return;if(name.includes('/')||name.includes('\\'))throw new Error('Digite apenas o nome da pasta.');await api('/api/sd/directory',{path:(directory==='/'?'':directory)+'/'+name});await loadFiles();});
+$('sd-format').onclick=safe(async()=>{const result=await api('/api/sd/format/prepare',{});formatChallenge=result.challenge;$('format-info').textContent='Cartão serial '+result.card_serial+' · '+size(result.total_bytes)+'. '+result.message;$('format-text').value='';$('format-dialog').showModal();});
+$('format-form').onsubmit=safe(async()=>{$('format-confirm').disabled=true;try{notice((await api('/api/sd/format',{challenge:formatChallenge,confirmation:$('format-text').value})).message);formatChallenge='';$('format-dialog').close();await refresh();}finally{$('format-confirm').disabled=false;}});
+$('system-form').onsubmit=safe(async()=>{if(!confirm('Salvar e reiniciar a câmera?'))return;notice((await api('/api/system',{hostname:$('hostname').value})).message);stopVideo(false);initialized=false;});
+$('ota-form').onsubmit=safe(async()=>{if(current?.services?.ota.enabled===false)throw new Error('Ative OTA na seção Serviços.');const file=$('firmware').files[0];if(!file||!confirm('Atualizar com '+file.name+'? Não desligue a placa.'))return;stopVideo();$('ota-progress').hidden=false;await new Promise((resolve,reject)=>{const xhr=new XMLHttpRequest();xhr.open('POST','/api/update');xhr.setRequestHeader('Content-Type','application/octet-stream');xhr.upload.onprogress=event=>{if(event.lengthComputable)$('ota-progress').value=100*event.loaded/event.total;};xhr.onload=()=>{try{const result=JSON.parse(xhr.responseText);if(xhr.status!==200)reject(new Error(result.message));else{notice(result.message);resolve();}}catch(error){reject(error);}};xhr.onerror=()=>reject(new Error('Conexão interrompida. Verifique o estado antes de reenviar.'));xhr.send(file);});});
+SdFolders.setup({
+    progressTarget:'storage',
+    showMessage:notice,
+    onChange:async job=>{
+        if(job.phase==='completed' && SdFolders.contains(job.path,directory)) {
+            directory=job.operation==='rename'?job.destination+directory.slice(job.path.length):SdFolders.parentOf(job.path);
+        }
+        await refresh();
+        await loadFiles();
+    }
+});
+$('sd-archive').onclick=event=>{event.preventDefault();SdFolders.download(directory);};
+ServiceControls.setup({
+    refresh:()=>refresh(true),
+    beforeSave:async()=>{clearTimeout(statusTimer);if(statusRequest)await statusRequest;},
+    afterSave:()=>refresh(true),
+    onConfig:services=>{
+        if(current)current.services=services;
+        updateServiceAvailability();
+        startPolling();
+    }
+});
+$('open-gallery').addEventListener('click',event=>{
+    if(!webSdEnabled()){event.preventDefault();notice('Ative o acesso web ao SD na seção Serviços.',true);$('services').scrollIntoView({behavior:'smooth'});}
+});
+window.addEventListener('pagehide',()=>{stopVideo(false);clearTimeout(statusTimer);});
+refresh().then(()=>SdFolders.resume());
+startPolling();
+</script>
+</main>
+</body>
+</html>
